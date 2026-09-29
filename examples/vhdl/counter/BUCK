@@ -1,0 +1,15 @@
+load("@rules//vhdl:vhdl_library.bzl", "vhdl_library")
+load("@rules//vhdl:vhdl_test.bzl", "vhdl_test")
+
+vhdl_library(
+    name = "counter",
+    srcs = ["counter.vhd"],
+    visibility = ["PUBLIC"],
+)
+
+vhdl_test(
+    name = "counter_tb",
+    srcs = ["counter_tb.vhd"],
+    top = "counter_tb",
+    deps = [":counter"],
+)

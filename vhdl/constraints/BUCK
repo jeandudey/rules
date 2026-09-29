@@ -1,0 +1,8 @@
+load("//vhdl:vhdl_info.bzl", "VHDL_STANDARDS")
+
+constraint(
+    name = "standard",
+    default = "08",
+    values = VHDL_STANDARDS,
+    visibility = ["PUBLIC"],
+)

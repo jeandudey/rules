@@ -1,0 +1,27 @@
+[cells]
+  rules = .
+  examples = examples
+  prelude = prelude
+  toolchains = examples/toolchains
+  none = none
+
+[cell_aliases]
+  root = rules
+  config = prelude
+  ovr_config = prelude
+  fbcode = none
+  fbsource = none
+  fbcode_macros = none
+  buck = none
+
+[external_cells]
+  prelude = bundled
+
+[parser]
+  target_platform_detector_spec = target:rules//...->prelude//platforms:default \
+    target:examples//...->prelude//platforms:default \
+    target:prelude//...->prelude//platforms:default \
+    target:toolchains//...->prelude//platforms:default
+
+[build]
+  execution_platforms = prelude//platforms:default

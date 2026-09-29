@@ -1,0 +1,32 @@
+load("@prelude//toolchains:demo.bzl", "system_demo_toolchains")
+load("@rules//toolchains:vhdl.bzl", "remote_vhdl_toolchain", "system_vhdl_toolchain")
+
+system_demo_toolchains()
+
+constraint(
+    name = "vhdl_toolchain",
+    default = "remote",
+    values = [
+        "remote",
+        "system",
+    ],
+)
+
+remote_vhdl_toolchain(name = "vhdl_remote")
+
+system_vhdl_toolchain(name = "vhdl_system")
+
+toolchain_alias(
+    name = "vhdl",
+    actual = select({
+        ":vhdl_toolchain[remote]": ":vhdl_remote",
+        ":vhdl_toolchain[system]": ":vhdl_system",
+    }),
+    visibility = ["PUBLIC"],
+)
+
+platform(
+    name = "system_vhdl_platform",
+    constraint_values = [":vhdl_toolchain[system]"],
+    deps = ["prelude//platforms:default"],
+)
