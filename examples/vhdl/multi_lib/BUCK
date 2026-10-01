@@ -1,0 +1,20 @@
+load("@rules//vhdl:vhdl_binary.bzl", "vhdl_binary")
+load("@rules//vhdl:vhdl_library.bzl", "vhdl_library")
+
+vhdl_library(
+    name = "util",
+    srcs = ["greeting_pkg.vhd"],
+)
+
+vhdl_library(
+    name = "greeter",
+    srcs = ["greeter.vhd"],
+    deps = [":util"],
+)
+
+vhdl_binary(
+    name = "sim",
+    top = "greeter.greeter",
+    generics = {"NAME": "Buck2"},
+    deps = [":greeter"],
+)

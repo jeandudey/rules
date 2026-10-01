@@ -19,8 +19,13 @@ mind that the code will be extended.
 - Rules for a specific language should have a dedicated directory for example, vhdl goes in `vhdl` at the root of the repository.
 - Rules for languages that depend on external tooling should have a `<prefix>_toolchain.bzl` with toolchain providers, no toolchain rules.
 - Providers related to a set of rules should use a `<prefix>_info.bzl` for defining the providers.
-- Constraints related to a set of rules goes under `<prefix>/constraints/BUCK`.
+- Constraints related to a set of rules goes under `<prefix>/constraints/BUCK`. Only constraints the rules read belong there, project specific constraints (such as selecting a toolchain) belong to the project using the rules, for example `examples/`.
 - Use the new `constraints` rule for defining constraints always.
 - If a compiler provides pre-built binaries we should strive to provide rules to download the toolchain remotely by specifying the needed version and making it work on Buck2.
 - If not we should strive to make the toolchain providers as generic as possible to allow the user to specify where the toolchain comes from with their own rules.
 - We should strive at minimum to provide toolchain rules that can use the system toolchain from PATH.
+- Toolchain rules go in the `toolchains/` directory at the root of the repository, one file per language named `<prefix>.bzl`, for example `toolchains/vhdl.bzl`. Toolchain providers stay in `<prefix>/<prefix>_toolchain.bzl`.
+- Do not create empty `BUCK` files unless Buck2 strictly requires them, a directory containing only `.bzl` files does not need a `BUCK` file.
+- Never create `private/` (or similar internal) folders, helper modules live next to the rules in the language directory.
+- Rules must work on both Unix and Windows execution platforms, do not assume `sh` or other Unix tools are available. Use the prelude `OsLookup` provider when the command differs per platform.
+- The `examples/` directory is a Buck2 project (created with `buck2 init`) used for integration testing, examples for each language go under `examples/<prefix>/`.
