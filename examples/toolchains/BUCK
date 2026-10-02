@@ -1,5 +1,6 @@
 load("@prelude//toolchains:demo.bzl", "system_demo_toolchains")
-load("@rules//toolchains:vhdl.bzl", "remote_vhdl_toolchain", "system_vhdl_toolchain")
+load("@rules//toolchains:vhdl.bzl", "system_vhdl_toolchain")
+load("@rules//toolchains/vhdl/ghdl:defs.bzl", "remote_ghdl_toolchain")
 
 system_demo_toolchains()
 
@@ -12,7 +13,7 @@ constraint(
     ],
 )
 
-remote_vhdl_toolchain(name = "vhdl_remote")
+remote_ghdl_toolchain(name = "vhdl_remote")
 
 system_vhdl_toolchain(name = "vhdl_system")
 
