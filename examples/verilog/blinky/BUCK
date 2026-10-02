@@ -1,17 +1,6 @@
 load("@rules//yosys:yosys_synthesis.bzl", "yosys_synthesis")
 
 yosys_synthesis(
-    name = "counter",
-    top = "counter",
-    parameters = {"WIDTH": "8"},
-    formats = [
-        "json",
-        "verilog",
-    ],
-    deps = ["//vhdl/counter:counter"],
-)
-
-yosys_synthesis(
     name = "blinky",
     srcs = ["blinky.sv"],
     top = "blinky",
