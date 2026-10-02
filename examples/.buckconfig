@@ -1,12 +1,12 @@
 [cells]
-  rules = .
-  examples = examples
+  root = .
   prelude = prelude
-  toolchains = examples/toolchains
+  rules = rules
+  toolchains = toolchains
   none = none
 
 [cell_aliases]
-  root = rules
+  examples = root
   config = prelude
   ovr_config = prelude
   fbcode = none
@@ -16,10 +16,15 @@
 
 [external_cells]
   prelude = bundled
+  rules = git
+
+[external_cell_rules]
+  git_origin = https://github.com/jeandudey/rules.git
+  commit_hash = 00846c1ed3337ea9c57dae3af6028f6d37ab4f3d
 
 [parser]
-  target_platform_detector_spec = target:rules//...->prelude//platforms:default \
-    target:examples//...->prelude//platforms:default \
+  target_platform_detector_spec = target:root//...->prelude//platforms:default \
+    target:rules//...->prelude//platforms:default \
     target:prelude//...->prelude//platforms:default \
     target:toolchains//...->prelude//platforms:default
 

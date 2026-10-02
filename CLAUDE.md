@@ -31,3 +31,5 @@ mind that the code will be extended.
 - Never create `private/` (or similar internal) folders, helper modules live next to the rules in the language directory.
 - Rules must work on both Unix and Windows execution platforms, do not assume `sh` or other Unix tools are available. Use the prelude `OsLookup` provider when the command differs per platform.
 - The `examples/` directory is a Buck2 project (created with `buck2 init`) used for integration testing, examples for each language go under `examples/<prefix>/`.
+- The repository root is not a Buck2 project. Buck2 resolves bare executable names against the project root before `PATH`, so directories such as `yosys/` would shadow the tools. `examples/` uses this repository as a `git` external cell, bump `commit_hash` in `examples/.buckconfig` when the rules change and test local commits with `--config external_cell_rules.git_origin=<absolute path of the repository> --config external_cell_rules.commit_hash=<commit>`.
+- Never name a directory under `examples/` after an executable a toolchain runs from `PATH`, for example `examples/yosys/`.

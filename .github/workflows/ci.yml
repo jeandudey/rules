@@ -10,7 +10,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    working-directory: examples
+
 env:
+  RULES: --config external_cell_rules.git_origin=${{ github.workspace }} --config external_cell_rules.commit_hash=${{ github.sha }}
   NVC_DEB: https://github.com/nickg/nvc/releases/download/r1.23.0/nvc_1.23.0-1_amd64_ubuntu-24.04.deb
 
 jobs:
@@ -26,11 +31,13 @@ jobs:
       PLATFORM: toolchains//:${{ matrix.simulator }}_remote_platform
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: dtolnay/install-buck2@latest
       - if: runner.os == 'Linux' && matrix.simulator == 'nvc'
         run: sudo apt-get update && sudo apt-get install -y libllvm18 libtcl8.6 libdw1t64 libreadline8t64 libffi8 libzstd1
-      - run: buck2 build --target-platforms ${{ env.PLATFORM }} //... examples//...
-      - run: buck2 test --target-platforms ${{ env.PLATFORM }} examples//...
+      - run: buck2 build ${{ env.RULES }} --target-platforms ${{ env.PLATFORM }} $(buck2 uquery ${{ env.RULES }} "kind(vhdl_, //...)")
+      - run: buck2 test ${{ env.RULES }} --target-platforms ${{ env.PLATFORM }} //...
 
   system-toolchain:
     name: System ${{ matrix.simulator }} (ubuntu-24.04)
@@ -43,6 +50,8 @@ jobs:
       PLATFORM: toolchains//:${{ matrix.simulator }}_system_platform
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: dtolnay/install-buck2@latest
       - if: matrix.simulator == 'ghdl'
         run: sudo apt-get update && sudo apt-get install -y ghdl-mcode
@@ -50,5 +59,16 @@ jobs:
         run: |
           curl -fsSL -o "$RUNNER_TEMP/nvc.deb" "$NVC_DEB"
           sudo apt-get update && sudo apt-get install -y "$RUNNER_TEMP/nvc.deb"
-      - run: buck2 build --target-platforms ${{ env.PLATFORM }} //... examples//...
-      - run: buck2 test --target-platforms ${{ env.PLATFORM }} examples//...
+      - run: buck2 build ${{ env.RULES }} --target-platforms ${{ env.PLATFORM }} $(buck2 uquery ${{ env.RULES }} "kind(vhdl_, //...)")
+      - run: buck2 test ${{ env.RULES }} --target-platforms ${{ env.PLATFORM }} //...
+
+  yosys:
+    name: System Yosys (ubuntu-24.04)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/install-buck2@latest
+      - run: sudo apt-get update && sudo apt-get install -y yosys yosys-plugin-ghdl ghdl-gcc
+      - run: buck2 build ${{ env.RULES }} $(buck2 uquery ${{ env.RULES }} "kind(yosys_, //...)")

@@ -1,5 +1,6 @@
 load("@rules//vhdl:vhdl_library.bzl", "vhdl_library")
 load("@rules//vhdl:vhdl_test.bzl", "vhdl_test")
+load("@rules//yosys:yosys_synthesis.bzl", "yosys_synthesis")
 
 vhdl_library(
     name = "counter",
@@ -11,5 +12,16 @@ vhdl_test(
     name = "counter_tb",
     srcs = ["counter_tb.vhd"],
     top = "counter_tb",
+    deps = [":counter"],
+)
+
+yosys_synthesis(
+    name = "counter_netlist",
+    top = "counter",
+    parameters = {"WIDTH": "8"},
+    formats = [
+        "json",
+        "verilog",
+    ],
     deps = [":counter"],
 )

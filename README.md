@@ -5,6 +5,7 @@ Buck2 rules for languages and tools that are not part of the Buck2 prelude.
 | Language | Rules | Toolchains |
 | -------- | ----- | ---------- |
 | VHDL | `vhdl_library`, `vhdl_binary`, `vhdl_test` | `remote_ghdl_toolchain`, `remote_nvc_toolchain`, `system_vhdl_toolchain` (GHDL, NVC) |
+| Yosys | `yosys_synthesis` | `system_yosys_toolchain` |
 
 ## Setup
 
@@ -139,14 +140,79 @@ vhdl_binary(
   be overridden per target with `standard`.
 - `vhdl_test` fails on assertions of `error` severity or above.
 
+## Yosys
+
+`system_yosys_toolchain` (`@rules//toolchains:yosys.bzl`) uses Yosys from `PATH` and loads the
+[GHDL plugin](https://github.com/ghdl/ghdl-yosys-plugin) to synthesize VHDL:
+
+```python
+load("@rules//toolchains:yosys.bzl", "system_yosys_toolchain")
+
+system_yosys_toolchain(
+    name = "yosys",
+    visibility = ["PUBLIC"],
+)
+```
+
+- `yosys` is the executable name or path, `yosys` by default.
+- `ghdl_plugin` is the plugin name or path loaded with `-m`, `ghdl` by default. Set `vhdl = False`
+  when the plugin is not installed.
+- `ghdl_flags` are passed to every `ghdl` command, for example `--PREFIX=` when the plugin does not
+  find the VHDL standard libraries.
+- On Ubuntu install `yosys`, `yosys-plugin-ghdl` and `ghdl-gcc`, the plugin uses the standard
+  libraries of the GCC backend.
+
+`yosys_synthesis` synthesizes Verilog and SystemVerilog `srcs` and VHDL libraries from `deps`:
+
+```python
+load("@rules//yosys:yosys_synthesis.bzl", "yosys_synthesis")
+
+yosys_synthesis(
+    name = "counter_netlist",
+    top = "counter",
+    parameters = {"WIDTH": "8"},
+    deps = [":counter"],
+)
+
+yosys_synthesis(
+    name = "blinky",
+    srcs = ["blinky.sv"],
+    top = "blinky",
+    synth = "synth_ice40",
+    vhdl_units = ["counter.counter"],
+    deps = ["//vhdl/counter:counter"],
+)
+```
+
+- VHDL is read from the sources of the `vhdl_library` targets in `deps`, so it works whichever
+  simulator the VHDL toolchain uses.
+- Without `srcs`, `top` is the VHDL unit to synthesize, written as `library.unit` or `unit` when
+  there is a single dependency. With `srcs`, `top` is a Verilog module and `vhdl_units` lists the
+  VHDL units it instantiates.
+- `parameters` sets the generics or parameters of `top`.
+- `synth` is the synthesis command (`synth` by default), `synth_flags` adds flags to it.
+- `formats` picks the netlists to write: `json` (default), `verilog`, `blif`, `edif` and `rtlil`.
+  Each one is a sub-target, as are `log` and `script`, for example `:blinky[log]`.
+
 ## Examples
 
-`examples/` is a Buck2 project used for integration testing:
+`examples/` is a Buck2 project used for integration testing. It uses this repository as a `git`
+external cell pinned in `examples/.buckconfig`. The repository root is not a Buck2 project:
+Buck2 runs actions from the project root and resolves bare executable names there before `PATH`,
+so the `yosys/` directory would shadow the `yosys` executable.
 
 ```sh
-buck2 build examples//...
-buck2 test examples//...
-buck2 run examples//vhdl/multi_lib:sim
+cd examples
+buck2 build //...
+buck2 test //...
+buck2 run //vhdl/multi_lib:sim
+```
+
+To test local changes to the rules, commit them and point the cell at your clone:
+
+```sh
+buck2 test --config external_cell_rules.git_origin=$PWD/.. \
+  --config external_cell_rules.commit_hash=$(git rev-parse HEAD) //...
 ```
 
 The examples use the downloaded GHDL by default. `examples/toolchains/BUCK` defines a platform
@@ -154,5 +220,7 @@ per simulator and toolchain: `ghdl_remote_platform`, `ghdl_system_platform`,
 `nvc_remote_platform` and `nvc_system_platform`. For example, to use NVC from `PATH`:
 
 ```sh
-buck2 test --target-platforms toolchains//:nvc_system_platform examples//...
+buck2 test --target-platforms toolchains//:nvc_system_platform //...
 ```
+
+The synthesis examples need Yosys and the GHDL plugin from `PATH`.
