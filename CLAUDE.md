@@ -25,6 +25,8 @@ mind that the code will be extended.
 - If not we should strive to make the toolchain providers as generic as possible to allow the user to specify where the toolchain comes from with their own rules.
 - We should strive at minimum to provide toolchain rules that can use the system toolchain from PATH.
 - Toolchain rules go in the `toolchains/` directory at the root of the repository, one file per language named `<prefix>.bzl`, for example `toolchains/vhdl.bzl`. Toolchain providers stay in `<prefix>/<prefix>_toolchain.bzl`.
+- Toolchains downloaded from vendor releases follow the prelude zig toolchain layout: `toolchains/<prefix>/<vendor>/releases.bzl` holds the release table (versions, per platform URLs and checksums) and `toolchains/<prefix>/<vendor>/defs.bzl` holds the toolchain rule, for example `toolchains/vhdl/ghdl/defs.bzl`.
+- Downloadable toolchain rules are named `remote_<vendor>_toolchain`, for example `remote_ghdl_toolchain`. Toolchains from `PATH` that work with several vendors are named `system_<prefix>_toolchain`, for example `system_vhdl_toolchain`.
 - Do not create empty `BUCK` files unless Buck2 strictly requires them, a directory containing only `.bzl` files does not need a `BUCK` file.
 - Never create `private/` (or similar internal) folders, helper modules live next to the rules in the language directory.
 - Rules must work on both Unix and Windows execution platforms, do not assume `sh` or other Unix tools are available. Use the prelude `OsLookup` provider when the command differs per platform.

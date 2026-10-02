@@ -4,7 +4,7 @@ Buck2 rules for languages and tools that are not part of the Buck2 prelude.
 
 | Language | Rules | Toolchains |
 | -------- | ----- | ---------- |
-| VHDL | `vhdl_library`, `vhdl_binary`, `vhdl_test` | `remote_vhdl_toolchain`, `system_vhdl_toolchain` (GHDL) |
+| VHDL | `vhdl_library`, `vhdl_binary`, `vhdl_test` | `remote_ghdl_toolchain`, `system_vhdl_toolchain` (GHDL) |
 
 ## Setup
 
@@ -18,9 +18,9 @@ Add this repository as a cell of your project:
 Register the toolchains you need in your `toolchains` cell:
 
 ```python
-load("@rules//toolchains:vhdl.bzl", "remote_vhdl_toolchain")
+load("@rules//toolchains/vhdl/ghdl:defs.bzl", "remote_ghdl_toolchain")
 
-remote_vhdl_toolchain(
+remote_ghdl_toolchain(
     name = "vhdl",
     visibility = ["PUBLIC"],
 )
@@ -30,9 +30,9 @@ remote_vhdl_toolchain(
 
 The VHDL rules currently support [GHDL](https://github.com/ghdl/ghdl), through two toolchains:
 
-- `remote_vhdl_toolchain` downloads a GHDL mcode release from GitHub, nothing needs to be
+- `remote_ghdl_toolchain` (`@rules//toolchains/vhdl/ghdl:defs.bzl`) downloads a GHDL mcode release from GitHub, nothing needs to be
   installed. `version` defaults to the latest known release (`6.0.0`); releases and checksums
-  are listed in `vhdl/ghdl_releases.bzl`. Supported execution platforms:
+  are listed in `toolchains/vhdl/ghdl/releases.bzl`. Supported execution platforms:
 
   | Version | Platforms |
   | ------- | --------- |
@@ -41,7 +41,7 @@ The VHDL rules currently support [GHDL](https://github.com/ghdl/ghdl), through t
 
   The Linux releases are built on Ubuntu 24.04 and need glibc 2.38 or newer and `libz.so.1`.
   The Windows and macOS releases are untested.
-- `system_vhdl_toolchain` uses GHDL installed on the system and found through `PATH` (for example
+- `system_vhdl_toolchain` (`@rules//toolchains:vhdl.bzl`) uses GHDL installed on the system and found through `PATH` (for example
   `apt install ghdl`). Set `backend` to match the GHDL code generator: `mcode` (default), `llvm`
   or `gcc`.
 
@@ -55,7 +55,7 @@ constraint(
     values = ["remote", "system"],
 )
 
-remote_vhdl_toolchain(name = "vhdl_remote")
+remote_ghdl_toolchain(name = "vhdl_remote")
 
 system_vhdl_toolchain(name = "vhdl_system")
 

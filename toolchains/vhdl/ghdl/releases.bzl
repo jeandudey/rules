@@ -1,4 +1,4 @@
-GHDL_DEFAULT_VERSION = "6.0.0"
+DEFAULT_VERSION = "6.0.0"
 
 def _linux(version: str, sha256: str) -> dict[str, str | None]:
     prefix = "ghdl-mcode-{}-ubuntu24.04-x86_64".format(version)
@@ -26,7 +26,7 @@ def _windows(version: str, sha256: str) -> dict[str, str | None]:
         "executable": "bin/ghdl.exe",
     }
 
-GHDL_RELEASES = {
+RELEASES = {
     "6.0.0": {
         "linux-x86_64": _linux("6.0.0", "30d6a977b8456d140bbafecbbe64b1947a3d92eeae8f5e6d9f528a174f9566e7"),
         "windows-x86_64": _windows("6.0.0", "76e160ceec35834c73ada6e4e484416d13aed4b64cbc7c74c5cca53a7ef60e41"),
