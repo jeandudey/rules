@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  remote-toolchain:
+    name: Remote toolchain (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/install-buck2@latest
+      - run: buck2 build //... examples//...
+      - run: buck2 test examples//...
+
+  system-toolchain:
+    name: System toolchain (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/install-buck2@latest
+      - run: sudo apt-get update && sudo apt-get install -y ghdl-mcode
+      - run: buck2 build --target-platforms toolchains//:system_vhdl_platform //... examples//...
+      - run: buck2 test --target-platforms toolchains//:system_vhdl_platform examples//...
