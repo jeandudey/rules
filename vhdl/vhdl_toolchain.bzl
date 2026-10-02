@@ -1,4 +1,4 @@
-VHDL_SIMULATORS = ["ghdl"]
+VHDL_SIMULATORS = ["ghdl", "nvc"]
 
 VHDL_GHDL_BACKENDS = ["mcode", "llvm", "gcc"]
 
@@ -7,9 +7,10 @@ VhdlToolchainInfo = provider(
 VHDL simulator toolchain.
 
 `simulator` selects how commands are built and must be one of `VHDL_SIMULATORS`. `compiler` is
-the simulator executable. `backend` is simulator specific, for GHDL it is one of
-`VHDL_GHDL_BACKENDS` and decides whether elaboration produces an executable (`llvm` and `gcc`)
-or the design is run by the simulator itself (`mcode`). The flag lists are appended to every
+the simulator executable, it may carry global simulator flags such as the NVC `-L` library
+search path. `backend` is simulator specific, for GHDL it is one of `VHDL_GHDL_BACKENDS` and
+decides whether elaboration produces an executable (`llvm` and `gcc`) or the design is run by
+the simulator itself (`mcode`), NVC takes no backend. The flag lists are appended to every
 analysis, elaboration and run command respectively.
 """,
     fields = {

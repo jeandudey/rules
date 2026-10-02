@@ -1,4 +1,5 @@
 load(":ghdl.bzl", "ghdl_analyze", "ghdl_executable")
+load(":nvc.bzl", "nvc_analyze", "nvc_executable")
 load(":vhdl_toolchain.bzl", "VhdlToolchainInfo")
 
 VhdlSimulator = record(
@@ -10,6 +11,10 @@ _SIMULATORS = {
     "ghdl": VhdlSimulator(
         analyze = ghdl_analyze,
         executable = ghdl_executable,
+    ),
+    "nvc": VhdlSimulator(
+        analyze = nvc_analyze,
+        executable = nvc_executable,
     ),
 }
 

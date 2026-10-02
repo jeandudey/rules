@@ -4,7 +4,7 @@ Buck2 rules for languages and tools that are not part of the Buck2 prelude.
 
 | Language | Rules | Toolchains |
 | -------- | ----- | ---------- |
-| VHDL | `vhdl_library`, `vhdl_binary`, `vhdl_test` | `remote_ghdl_toolchain`, `system_vhdl_toolchain` (GHDL) |
+| VHDL | `vhdl_library`, `vhdl_binary`, `vhdl_test` | `remote_ghdl_toolchain`, `remote_nvc_toolchain`, `system_vhdl_toolchain` (GHDL, NVC) |
 
 ## Setup
 
@@ -28,7 +28,8 @@ remote_ghdl_toolchain(
 
 ## VHDL
 
-The VHDL rules currently support [GHDL](https://github.com/ghdl/ghdl), through two toolchains:
+The VHDL rules support [GHDL](https://github.com/ghdl/ghdl) and [NVC](https://github.com/nickg/nvc),
+through these toolchains:
 
 - `remote_ghdl_toolchain` (`@rules//toolchains/vhdl/ghdl:defs.bzl`) downloads a GHDL mcode release from GitHub, nothing needs to be
   installed. `version` defaults to the latest known release (`6.0.0`); releases and checksums
@@ -41,37 +42,65 @@ The VHDL rules currently support [GHDL](https://github.com/ghdl/ghdl), through t
 
   The Linux releases are built on Ubuntu 24.04 and need glibc 2.38 or newer and `libz.so.1`.
   The Windows and macOS releases are untested.
-- `system_vhdl_toolchain` (`@rules//toolchains:vhdl.bzl`) uses GHDL installed on the system and found through `PATH` (for example
-  `apt install ghdl`). Set `backend` to match the GHDL code generator: `mcode` (default), `llvm`
-  or `gcc`.
+- `remote_nvc_toolchain` (`@rules//toolchains/vhdl/nvc:defs.bzl`) downloads an NVC release package from GitHub
+  and unpacks it. `version` defaults to the latest known release (`1.23.0`); releases and
+  checksums are listed in `toolchains/vhdl/nvc/releases.bzl`. Supported execution platforms:
 
-Both toolchains can be offered at once by selecting between them with a constraint, which is
+  | Version | Platforms |
+  | ------- | --------- |
+  | `1.23.0` | `linux-x86_64`, `windows-x86_64` |
+
+  NVC only publishes Debian packages and a Windows installer. On Linux the Ubuntu 24.04
+  package is unpacked with `dpkg-deb` and needs its shared libraries installed:
+  `apt install libllvm18 libtcl8.6 libdw1t64 libreadline8t64 libffi8 libzstd1`. On Windows the
+  installer is unpacked with `msiexec /a` and is self-contained.
+- `system_vhdl_toolchain` (`@rules//toolchains:vhdl.bzl`) uses a simulator installed on the system and found through
+  `PATH`. `simulator` is `ghdl` (default) or `nvc`, `compiler` defaults to the simulator name.
+  For GHDL (for example `apt install ghdl`) set `backend` to match the code generator: `mcode`
+  (default), `llvm` or `gcc`. NVC takes no `backend`.
+
+NVC supports the `93`, `93c`, `00`, `02`, `08` and `19` standards; `87` is GHDL only.
+
+Several toolchains can be offered at once by selecting between them with constraints, which is
 what `examples/toolchains/BUCK` does:
 
 ```python
+constraint(
+    name = "vhdl_simulator",
+    default = "ghdl",
+    values = ["ghdl", "nvc"],
+)
+
 constraint(
     name = "vhdl_toolchain",
     default = "remote",
     values = ["remote", "system"],
 )
 
-remote_ghdl_toolchain(name = "vhdl_remote")
+remote_ghdl_toolchain(name = "vhdl_ghdl_remote")
 
-system_vhdl_toolchain(name = "vhdl_system")
+system_vhdl_toolchain(name = "vhdl_ghdl_system")
+
+remote_nvc_toolchain(name = "vhdl_nvc_remote")
+
+system_vhdl_toolchain(
+    name = "vhdl_nvc_system",
+    simulator = "nvc",
+)
 
 toolchain_alias(
     name = "vhdl",
     actual = select({
-        ":vhdl_toolchain[remote]": ":vhdl_remote",
-        ":vhdl_toolchain[system]": ":vhdl_system",
+        ":vhdl_simulator[ghdl]": select({
+            ":vhdl_toolchain[remote]": ":vhdl_ghdl_remote",
+            ":vhdl_toolchain[system]": ":vhdl_ghdl_system",
+        }),
+        ":vhdl_simulator[nvc]": select({
+            ":vhdl_toolchain[remote]": ":vhdl_nvc_remote",
+            ":vhdl_toolchain[system]": ":vhdl_nvc_system",
+        }),
     }),
     visibility = ["PUBLIC"],
-)
-
-platform(
-    name = "system_vhdl_platform",
-    constraint_values = [":vhdl_toolchain[system]"],
-    deps = ["prelude//platforms:default"],
 )
 ```
 
@@ -120,8 +149,10 @@ buck2 test examples//...
 buck2 run examples//vhdl/multi_lib:sim
 ```
 
-The examples use the downloaded GHDL by default. To use GHDL from `PATH` instead:
+The examples use the downloaded GHDL by default. `examples/toolchains/BUCK` defines a platform
+per simulator and toolchain: `ghdl_remote_platform`, `ghdl_system_platform`,
+`nvc_remote_platform` and `nvc_system_platform`. For example, to use NVC from `PATH`:
 
 ```sh
-buck2 test --target-platforms toolchains//:system_vhdl_platform examples//...
+buck2 test --target-platforms toolchains//:nvc_system_platform examples//...
 ```
