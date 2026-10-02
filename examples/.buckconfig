@@ -20,7 +20,7 @@
 
 [external_cell_rules]
   git_origin = https://github.com/jeandudey/rules.git
-  commit_hash = 00846c1ed3337ea9c57dae3af6028f6d37ab4f3d
+  commit_hash = cb14e7fbcd19e640fd4eb8df597275b83eac01b2
 
 [parser]
   target_platform_detector_spec = target:root//...->prelude//platforms:default \
