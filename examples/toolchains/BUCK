@@ -1,5 +1,6 @@
 load("@prelude//toolchains:demo.bzl", "system_demo_toolchains")
 load("@rules//toolchains:vhdl.bzl", "system_vhdl_toolchain")
+load("@rules//toolchains:yosys.bzl", "system_yosys_toolchain")
 load("@rules//toolchains/vhdl/ghdl:defs.bzl", "remote_ghdl_toolchain")
 load("@rules//toolchains/vhdl/nvc:defs.bzl", "remote_nvc_toolchain")
 
@@ -46,6 +47,11 @@ toolchain_alias(
             ":vhdl_toolchain[system]": ":vhdl_nvc_system",
         }),
     }),
+    visibility = ["PUBLIC"],
+)
+
+system_yosys_toolchain(
+    name = "yosys",
     visibility = ["PUBLIC"],
 )
 
