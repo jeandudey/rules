@@ -10,26 +10,45 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NVC_DEB: https://github.com/nickg/nvc/releases/download/r1.23.0/nvc_1.23.0-1_amd64_ubuntu-24.04.deb
+
 jobs:
   remote-toolchain:
-    name: Remote toolchain (${{ matrix.os }})
+    name: Remote ${{ matrix.simulator }} (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-24.04, windows-latest]
+        simulator: [ghdl, nvc]
     runs-on: ${{ matrix.os }}
+    env:
+      PLATFORM: toolchains//:${{ matrix.simulator }}_remote_platform
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/install-buck2@latest
-      - run: buck2 build //... examples//...
-      - run: buck2 test examples//...
+      - if: runner.os == 'Linux' && matrix.simulator == 'nvc'
+        run: sudo apt-get update && sudo apt-get install -y libllvm18 libtcl8.6 libdw1t64 libreadline8t64 libffi8 libzstd1
+      - run: buck2 build --target-platforms ${{ env.PLATFORM }} //... examples//...
+      - run: buck2 test --target-platforms ${{ env.PLATFORM }} examples//...
 
   system-toolchain:
-    name: System toolchain (ubuntu-latest)
-    runs-on: ubuntu-latest
+    name: System ${{ matrix.simulator }} (ubuntu-24.04)
+    strategy:
+      fail-fast: false
+      matrix:
+        simulator: [ghdl, nvc]
+    runs-on: ubuntu-24.04
+    env:
+      PLATFORM: toolchains//:${{ matrix.simulator }}_system_platform
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/install-buck2@latest
-      - run: sudo apt-get update && sudo apt-get install -y ghdl-mcode
-      - run: buck2 build --target-platforms toolchains//:system_vhdl_platform //... examples//...
-      - run: buck2 test --target-platforms toolchains//:system_vhdl_platform examples//...
+      - if: matrix.simulator == 'ghdl'
+        run: sudo apt-get update && sudo apt-get install -y ghdl-mcode
+      - if: matrix.simulator == 'nvc'
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/nvc.deb" "$NVC_DEB"
+          sudo apt-get update && sudo apt-get install -y "$RUNNER_TEMP/nvc.deb"
+      - run: buck2 build --target-platforms ${{ env.PLATFORM }} //... examples//...
+      - run: buck2 test --target-platforms ${{ env.PLATFORM }} examples//...

@@ -1,8 +1,18 @@
 load("@prelude//toolchains:demo.bzl", "system_demo_toolchains")
 load("@rules//toolchains:vhdl.bzl", "system_vhdl_toolchain")
 load("@rules//toolchains/vhdl/ghdl:defs.bzl", "remote_ghdl_toolchain")
+load("@rules//toolchains/vhdl/nvc:defs.bzl", "remote_nvc_toolchain")
 
 system_demo_toolchains()
+
+constraint(
+    name = "vhdl_simulator",
+    default = "ghdl",
+    values = [
+        "ghdl",
+        "nvc",
+    ],
+)
 
 constraint(
     name = "vhdl_toolchain",
@@ -13,21 +23,41 @@ constraint(
     ],
 )
 
-remote_ghdl_toolchain(name = "vhdl_remote")
+remote_ghdl_toolchain(name = "vhdl_ghdl_remote")
 
-system_vhdl_toolchain(name = "vhdl_system")
+system_vhdl_toolchain(name = "vhdl_ghdl_system")
+
+remote_nvc_toolchain(name = "vhdl_nvc_remote")
+
+system_vhdl_toolchain(
+    name = "vhdl_nvc_system",
+    simulator = "nvc",
+)
 
 toolchain_alias(
     name = "vhdl",
     actual = select({
-        ":vhdl_toolchain[remote]": ":vhdl_remote",
-        ":vhdl_toolchain[system]": ":vhdl_system",
+        ":vhdl_simulator[ghdl]": select({
+            ":vhdl_toolchain[remote]": ":vhdl_ghdl_remote",
+            ":vhdl_toolchain[system]": ":vhdl_ghdl_system",
+        }),
+        ":vhdl_simulator[nvc]": select({
+            ":vhdl_toolchain[remote]": ":vhdl_nvc_remote",
+            ":vhdl_toolchain[system]": ":vhdl_nvc_system",
+        }),
     }),
     visibility = ["PUBLIC"],
 )
 
-platform(
-    name = "system_vhdl_platform",
-    constraint_values = [":vhdl_toolchain[system]"],
-    deps = ["prelude//platforms:default"],
-)
+[
+    platform(
+        name = "{}_{}_platform".format(simulator, toolchain),
+        constraint_values = [
+            ":vhdl_simulator[{}]".format(simulator),
+            ":vhdl_toolchain[{}]".format(toolchain),
+        ],
+        deps = ["prelude//platforms:default"],
+    )
+    for simulator in ["ghdl", "nvc"]
+    for toolchain in ["remote", "system"]
+]

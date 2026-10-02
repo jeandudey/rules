@@ -1,5 +1,5 @@
 load("@prelude//:paths.bzl", "paths")
-load("@prelude//os_lookup:defs.bzl", "OsLookup", "ScriptLanguage")
+load(":launcher.bzl", "project_root_launcher")
 load(":vhdl_info.bzl", "VhdlLibrary", "VhdlLibraryTSet")
 load(":vhdl_toolchain.bzl", "VhdlToolchainInfo")
 
@@ -98,27 +98,6 @@ def ghdl_analyze(
         srcs = srcs,
     )
 
-def _project_root_launcher(ctx: AnalysisContext) -> Artifact:
-    if ctx.attrs._target_os_type[OsLookup].script == ScriptLanguage("bat"):
-        launcher = ctx.actions.declare_output("ghdl_launcher.bat")
-        content = cmd_args(
-            "@echo off",
-            cmd_args("cd /d \"%~dp0", ctx.label.project_root, "\"", delimiter = ""),
-            "%*",
-            "exit /b %ERRORLEVEL%",
-            relative_to = (launcher, 1),
-        )
-    else:
-        launcher = ctx.actions.declare_output("ghdl_launcher.sh")
-        content = cmd_args(
-            "#!/bin/sh",
-            cmd_args("cd \"$(dirname \"$0\")/", ctx.label.project_root, "\" || exit 1", delimiter = ""),
-            "exec \"$@\"",
-            relative_to = (launcher, 1),
-        )
-    ctx.actions.write(launcher, content, is_executable = True)
-    return launcher
-
 def ghdl_executable(
         ctx: AnalysisContext,
         toolchain: VhdlToolchainInfo,
@@ -144,7 +123,7 @@ def ghdl_executable(
 
     if toolchain.backend == "mcode":
         return cmd_args(
-            _project_root_launcher(ctx),
+            project_root_launcher(ctx),
             toolchain.compiler,
             "-r",
             design_args,

@@ -1,12 +1,19 @@
 load("//vhdl:vhdl_toolchain.bzl", "VHDL_GHDL_BACKENDS", "VHDL_SIMULATORS", "VhdlToolchainInfo")
 
+def _backend(ctx: AnalysisContext) -> str | None:
+    if ctx.attrs.simulator == "ghdl":
+        return ctx.attrs.backend or "mcode"
+    if ctx.attrs.backend != None:
+        fail("{}: `backend` only applies to GHDL".format(ctx.label.raw_target()))
+    return None
+
 def _system_vhdl_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     return [
         DefaultInfo(),
         VhdlToolchainInfo(
             simulator = ctx.attrs.simulator,
-            compiler = RunInfo(args = [ctx.attrs.compiler]),
-            backend = ctx.attrs.backend,
+            compiler = RunInfo(args = [ctx.attrs.compiler or ctx.attrs.simulator]),
+            backend = _backend(ctx),
             analyze_flags = ctx.attrs.analyze_flags,
             elaborate_flags = ctx.attrs.elaborate_flags,
             run_flags = ctx.attrs.run_flags,
@@ -19,11 +26,15 @@ system_vhdl_toolchain = rule(
     doc = "VHDL toolchain using a simulator installed on the system and found through `PATH`.",
     attrs = {
         "simulator": attrs.enum(VHDL_SIMULATORS, default = "ghdl", doc = "Simulator to use."),
-        "compiler": attrs.string(default = "ghdl", doc = "Simulator executable name or path."),
-        "backend": attrs.enum(
-            VHDL_GHDL_BACKENDS,
-            default = "mcode",
-            doc = "GHDL code generator the executable was built with.",
+        "compiler": attrs.option(
+            attrs.string(),
+            default = None,
+            doc = "Simulator executable name or path, defaults to the `simulator` name.",
+        ),
+        "backend": attrs.option(
+            attrs.enum(VHDL_GHDL_BACKENDS),
+            default = None,
+            doc = "GHDL code generator the executable was built with, defaults to `mcode`. Only valid for GHDL.",
         ),
         "analyze_flags": attrs.list(attrs.string(), default = [], doc = "Extra flags for every analysis."),
         "elaborate_flags": attrs.list(attrs.string(), default = [], doc = "Extra flags for every elaboration."),
